@@ -1,0 +1,534 @@
+\documentclass[12pt]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[spanish]{babel}
+\usepackage{amsmath}
+\usepackage{amsfonts}
+\usepackage{amssymb}
+\usepackage{geometry}
+\usepackage{tabularx}
+\usepackage{multirow}
+\usepackage{longtable}
+\usepackage{booktabs}
+\usepackage{color}
+\usepackage{listings}
+\usepackage{hyperref}
+\usepackage{url}
+
+\geometry{top=2.5cm, bottom=2.5cm, left=2.5cm, right=2.5cm}
+
+% Definir color para los comandos
+\definecolor{codegreen}{rgb}{0,0.6,0}
+\definecolor{codegray}{rgb}{0.5,0.5,0.5}
+\definecolor{codepurple}{rgb}{0.58,0,0.82}
+
+% Configuración para código ensamblador
+\lstdefinelanguage{MIPS}{
+    morekeywords={add,addi,sub,subi,mul,div,beq,bne,j,jr,jal,lw,sw,li,la,addiu,addu},
+    morekeywords=[2]{syscall,move,nop},
+    sensitive=false,
+    morecomment=[l]{\#},
+    morestring=[b]"
+}
+
+\lstset{
+    language=MIPS,
+    basicstyle=\ttfamily\small,
+    keywordstyle=\color{blue},
+    keywordstyle=[2]\color{codepurple},
+    commentstyle=\color{codegreen},
+    stringstyle=\color{codegray},
+    numbers=left,
+    numberstyle=\tiny\color{codegray},
+    stepnumber=1,
+    numbersep=5pt,
+    frame=single,
+    breaklines=true
+}
+
+\title{\textbf{Guía de Referencia}\\MIPS32 - Arquitectura y Conjunto de Instrucciones}
+\author{Estudiante de Arquitectura de Computadores}
+\date{\today}
+
+\begin{document}
+
+\maketitle
+
+\tableofcontents
+\newpage
+
+\section{Introducción a MIPS32}
+
+MIPS (Microprocessor without Interlocked Pipeline Stages) es una arquitectura de tipo RISC (Reduced Instruction Set Computer) desarrollada originalmente por John L. Hennessy en la Universidad de Stanford. El libro "Computer Organization and Design" de Patterson y Hennessy utiliza MIPS como arquitectura de estudio debido a su elegancia y simplicidad \cite{hennessy2012computer}.
+
+\subsection{Características Principales}
+\begin{itemize}
+    \item Conjunto de instrucciones reducido y ortogonal
+    \item Formato de instrucciones de 32 bits de longitud fija
+    \item 32 registros de propósito general de 32 bits
+    \item Modos de direccionamiento simples
+    \item Ideal para la enseñanza de arquitectura de computadores
+\end{itemize}
+
+\section{Convención de Notaciones}
+
+En este documento se utilizarán las siguientes notaciones estándar para describir las instrucciones MIPS \cite{mipsguide}:
+
+\begin{center}
+    \begin{tabularx}{0.8\textwidth}{|l|X|}
+        \hline
+        \textbf{Notación} & \textbf{Descripción} \\
+        \hline
+        Rd, Rs, Rt & Registros (destino, fuente1, fuente2) \\
+        \hline
+        Imm16 & Valor inmediato de 16 bits \\
+        \hline
+        Label & Etiqueta que representa una dirección de memoria \\
+        \hline
+        Offset(Rb) & Direccionamiento base+desplazamiento \\
+        \hline
+        \# comentario & Comentario en ensamblador \\
+        \hline
+    \end{tabularx}
+\end{center}
+
+\section{Registros del MIPS32}
+
+La arquitectura MIPS32 dispone de 32 registros de propósito general de 32 bits cada uno. La siguiente tabla muestra la convención de nombres y el uso estándar de cada registro \cite{spimref}:
+
+\begin{longtable}{|c|c|c|p{5cm}|}
+    \hline
+    \textbf{Número} & \textbf{Nombre} & \textbf{Nombre Alternativo} & \textbf{Uso} \\
+    \hline
+    0 & \$zero & \$0 & Siempre contiene el valor 0 \\
+    \hline
+    1 & \$at & \$1 & Reservado para el ensamblador \\
+    \hline
+    2 & \$v0 & \$2 & Valor de retorno de funciones \\
+    \hline
+    3 & \$v1 & \$3 & Valor de retorno de funciones \\
+    \hline
+    4 & \$a0 & \$4 & Argumento 1 para funciones \\
+    \hline
+    5 & \$a1 & \$5 & Argumento 2 para funciones \\
+    \hline
+    6 & \$a2 & \$6 & Argumento 3 para funciones \\
+    \hline
+    7 & \$a3 & \$7 & Argumento 4 para funciones \\
+    \hline
+    8-15 & \$t0-\$t7 & \$8-\$15 & Temporales (no preservados entre llamadas) \\
+    \hline
+    16-23 & \$s0-\$s7 & \$16-\$23 & Registros preservados (callee-saved) \\
+    \hline
+    24-25 & \$t8-\$t9 & \$24-\$25 & Temporales adicionales \\
+    \hline
+    26-27 & \$k0-\$k1 & \$26-\$27 & Reservados para el kernel del SO \\
+    \hline
+    28 & \$gp & \$28 & Puntero al área global \\
+    \hline
+    29 & \$sp & \$29 & Puntero de pila (Stack Pointer) \\
+    \hline
+    30 & \$fp & \$30 & Puntero de frame (Frame Pointer) \\
+    \hline
+    31 & \$ra & \$31 & Dirección de retorno \\
+    \hline
+    \caption{Registros de propósito general MIPS32 \cite{regusage}}
+    \label{tab:registros}
+\end{longtable}
+
+\subsection{Convenciones de Uso de Registros}
+
+\begin{itemize}
+    \item \textbf{\$zero}: Siempre lee como 0, las escrituras no tienen efecto
+    \item \textbf{\$v0-\$v1}: Contienen el resultado de una función
+    \item \textbf{\$a0-\$a3}: Se usan para pasar los primeros 4 argumentos a funciones
+    \item \textbf{\$sp}: Apunta al tope de la pila (crece hacia direcciones menores)
+    \item \textbf{\$ra}: Contiene la dirección de retorno al hacer \texttt{jal}
+\end{itemize}
+
+\section{Conjunto de Instrucciones}
+
+\subsection{Instrucciones Aritméticas}
+
+Las operaciones aritméticas básicas siguen el formato: \texttt{operación Rd, Rs, Rt} donde \texttt{Rd = Rs operación Rt} \cite{mipsguide}.
+
+\begin{lstlisting}[caption=Ejemplos de instrucciones aritméticas, label=lst:aritmeticas]
+add $t0, $t1, $t2    # $t0 = $t1 + $t2
+sub $t0, $t1, $t2    # $t0 = $t1 - $t2
+addi $t0, $t1, 10    # $t0 = $t1 + 10
+mul $t0, $t1, $t2    # $t0 = $t1 * $t2
+\end{lstlisting}
+
+\begin{longtable}{|l|l|l|}
+    \hline
+    \textbf{Instrucción} & \textbf{Sintaxis} & \textbf{Descripción} \\
+    \hline
+    ADD & add Rd, Rs, Rt & Rd = Rs + Rt (con detección de overflow) \\
+    \hline
+    ADDI & addi Rt, Rs, Imm16 & Rt = Rs + Imm16 (con overflow) \\
+    \hline
+    ADDU & addu Rd, Rs, Rt & Rd = Rs + Rt (sin overflow) \\
+    \hline
+    ADDIU & addiu Rt, Rs, Imm16 & Rt = Rs + Imm16 (sin overflow) \\
+    \hline
+    SUB & sub Rd, Rs, Rt & Rd = Rs - Rt (con overflow) \\
+    \hline
+    SUBU & subu Rd, Rs, Rt & Rd = Rs - Rt (sin overflow) \\
+    \hline
+    MUL & mul Rd, Rs, Rt & Rd = Rs * Rt \\
+    \hline
+    DIV & div Rs, Rt & Lo = Rs / Rt, Hi = Rs \% Rt \\
+    \hline
+    \caption{Instrucciones aritméticas MIPS32}
+\end{longtable}
+
+\subsection{Instrucciones Lógicas}
+
+\begin{lstlisting}[caption=Ejemplos de operaciones lógicas, label=lst:logicas]
+and $t0, $t1, $t2     # $t0 = $t1 AND $t2
+or  $t0, $t1, $t2     # $t0 = $t1 OR $t2
+nor $t0, $t1, $t2     # $t0 = NOT($t1 OR $t2)
+xor $t0, $t1, $t2     # $t0 = $t1 XOR $t2
+\end{lstlisting}
+
+\begin{longtable}{|l|l|l|}
+    \hline
+    \textbf{Instrucción} & \textbf{Sintaxis} & \textbf{Descripción} \\
+    \hline
+    AND & and Rd, Rs, Rt & Rd = Rs \& Rt \\
+    \hline
+    ANDI & andi Rt, Rs, Imm16 & Rt = Rs \& Imm16 \\
+    \hline
+    OR & or Rd, Rs, Rt & Rd = Rs | Rt \\
+    \hline
+    ORI & ori Rt, Rs, Imm16 & Rt = Rs | Imm16 \\
+    \hline
+    NOR & nor Rd, Rs, Rt & Rd = $\sim$(Rs | Rt) \\
+    \hline
+    XOR & xor Rd, Rs, Rt & Rd = Rs \^ Rt \\
+    \hline
+    XORI & xori Rt, Rs, Imm16 & Rt = Rs \^ Imm16 \\
+    \hline
+    \caption{Instrucciones lógicas MIPS32}
+\end{longtable}
+
+\subsection{Instrucciones de Desplazamiento}
+
+\begin{longtable}{|l|l|l|}
+    \hline
+    \textbf{Instruccion} & \textbf{Sintaxis} & \textbf{Descripcion} \\
+    \hline
+    SLL & sll Rd, Rt, Imm5 & Rd = Rt $\ll$ Imm5 (desplazamiento logico izquierda) \\
+    \hline
+    SLLV & sllv Rd, Rt, Rs & Rd = Rt $\ll$ Rs \\
+    \hline
+    SRL & srl Rd, Rt, Imm5 & Rd = Rt $\gg$ Imm5 (desplazamiento logico derecha, rellena con 0) \\
+    \hline
+    SRA & sra Rd, Rt, Imm5 & Rd = Rt $\gg$ Imm5 (desplazamiento aritmetico, rellena con MSB) \\
+    \hline
+    \caption{Instrucciones de desplazamiento}
+\end{longtable}
+
+\subsection{Instrucciones de Transferencia de Datos}
+
+Estas instrucciones permiten mover datos entre registros y memoria \cite{mipsguide}:
+
+\begin{lstlisting}[caption=Ejemplos de carga y almacenamiento, label=lst:memoria]
+lw $t0, 0($s1)        # Carga palabra en $t0 desde Mem[$s1 + 0]
+sw $t0, 4($s1)        # Almacena palabra en Mem[$s1 + 4] desde $t0
+lb $t0, 0($s1)        # Carga byte (con extension de signo)
+lbu $t0, 0($s1)       # Carga byte (sin extension de signo)
+li $t0, 100           # Carga inmediata (pseudoinstruccion)
+la $t0, etiqueta      # Carga direccion de etiqueta
+\end{lstlisting}
+
+\begin{longtable}{|l|l|l|}
+    \hline
+    \textbf{Instruccion} & \textbf{Sintaxis} & \textbf{Descripcion} \\
+    \hline
+    LW & lw Rt, Offset16(Rb) & Rt = Mem[Rb + Offset16] (palabra) \\
+    \hline
+    SW & sw Rt, Offset16(Rb) & Mem[Rb + Offset16] = Rt (palabra) \\
+    \hline
+    LB & lb Rt, Offset16(Rb) & Rt = Mem[Rb + Offset16] (byte con signo) \\
+    \hline
+    LBU & lbu Rt, Offset16(Rb) & Rt = Mem[Rb + Offset16] (byte sin signo) \\
+    \hline
+    LH & lh Rt, Offset16(Rb) & Rt = Mem[Rb + Offset16] (half-word con signo) \\
+    \hline
+    LUI & lui Rt, Imm16 & Rt = Imm16 $\ll$ 16 \\
+    \hline
+    \caption{Instrucciones de carga/almacenamiento}
+\end{longtable}
+
+\subsection{Instrucciones de Comparación y Salto}
+
+Las instrucciones de comparación (\texttt{slt} - Set on Less Than) establecen un registro a 1 si la condición se cumple, o a 0 en caso contrario \cite{mipsguide}.
+
+\begin{lstlisting}[caption=Ejemplos de comparación y saltos, label=lst:branch]
+slt $t0, $t1, $t2     # $t0 = 1 si $t1 < $t2, sino 0
+beq $t1, $t2, label   # Salta a label si $t1 == $t2
+bne $t1, $t2, label   # Salta a label si $t1 != $t2
+j label               # Salto incondicional (pseudoinstrucción)
+jal funcion           # Salta a funcion y guarda retorno en $ra
+jr $ra                # Retorna de función
+\end{lstlisting}
+
+\begin{longtable}{|l|l|l|}
+    \hline
+    \textbf{Instrucción} & \textbf{Sintaxis} & \textbf{Descripción} \\
+    \hline
+    SLT & slt Rd, Rs, Rt & Rd = 1 si Rs < Rt, sino 0 (con signo) \\
+    \hline
+    SLTU & sltu Rd, Rs, Rt & Rd = 1 si Rs < Rt, sino 0 (sin signo) \\
+    \hline
+    SLTI & slti Rt, Rs, Imm16 & Rt = 1 si Rs < Imm16, sino 0 \\
+    \hline
+    BEQ & beq Rs, Rt, Label & Salta si Rs == Rt \\
+    \hline
+    BNE & bne Rs, Rt, Label & Salta si Rs != Rt \\
+    \hline
+    BGEZ & bgez Rs, Label & Salta si Rs >= 0 \\
+    \hline
+    BLEZ & blez Rs, Label & Salta si Rs <= 0 \\
+    \hline
+    BGTZ & bgtz Rs, Label & Salta si Rs > 0 \\
+    \hline
+    BLTZ & bltz Rs, Label & Salta si Rs < 0 \\
+    \hline
+    J & j Label & Salto incondicional a Label \\
+    \hline
+    JAL & jal Label & Salto y guarda retorno en \$ra \\
+    \hline
+    JR & jr Rs & Salto a dirección contenida en Rs \\
+    \hline
+    \caption{Instrucciones de comparación y salto}
+\end{longtable}
+
+\subsection{Instrucciones de Control del Sistema - Syscall}
+
+La instrucción \texttt{syscall} permite realizar llamadas al sistema operativo (o al simulador en MARS). El valor en \$v0 determina qué operación realizar \cite{mipsguide}:
+
+\begin{longtable}{|c|l|l|}
+    \hline
+    \textbf{Código (\$v0)} & \textbf{Operación} & \textbf{Argumentos/Resultados} \\
+    \hline
+    1 & Imprimir entero & \$a0 = entero a imprimir \\
+    \hline
+    4 & Imprimir cadena & \$a0 = dirección de cadena terminada en null \\
+    \hline
+    5 & Leer entero & Resultado devuelto en \$v0 \\
+    \hline
+    8 & Leer cadena & \$a0 = buffer, \$a1 = longitud máxima \\
+    \hline
+    10 & Salir del programa & - \\
+    \hline
+    11 & Imprimir carácter & \$a0 = carácter a imprimir \\
+    \hline
+    12 & Leer carácter & Resultado devuelto en \$v0 \\
+    \hline
+    \caption{Syscalls útiles en MARS}
+\end{longtable}
+
+\begin{lstlisting}[caption=Ejemplo de programa completo con syscalls, label=lst:syscall]
+.data
+mensaje: .asciiz "Hola Mundo\n"
+numero:  .word 42
+
+.text
+main:
+    # Imprimir cadena
+    li $v0, 4
+    la $a0, mensaje
+    syscall
+    
+    # Imprimir entero
+    li $v0, 1
+    lw $a0, numero
+    syscall
+    
+    # Salir
+    li $v0, 10
+    syscall
+\end{lstlisting}
+
+\section{Estructura de un Programa en Ensamblador MIPS}
+
+Un programa típico en MIPS tiene dos secciones principales \cite{mipsguide}:
+
+\begin{lstlisting}[caption=Estructura básica de un programa MIPS, label=lst:estructura]
+.data
+    # Variables globales y datos inicializados
+    mensaje: .asciiz "Ingrese un numero: "
+    resultado: .word 0
+
+.text
+    .globl main
+main:
+    # Código del programa
+    
+    # Salida del programa
+    li $v0, 10
+    syscall
+\end{lstlisting}
+
+\subsection{Directivas de Datos más Comunes}
+
+\begin{longtable}{|l|l|}
+    \hline
+    \textbf{Directiva} & \textbf{Descripción} \\
+    \hline
+    .byte valor & Almacena uno o más bytes \\
+    \hline
+    .half valor & Almacena half-words (16 bits) \\
+    \hline
+    .word valor & Almacena palabras (32 bits) \\
+    \hline
+    .asciiz "texto" & Almacena cadena terminada en null \\
+    \hline
+    .space N & Reserva N bytes sin inicializar \\
+    \hline
+    \caption{Directivas de datos en MIPS}
+\end{longtable}
+
+\section{Pseudoinstrucciones}
+
+MARS (al igual que otros ensambladores MIPS) soporta pseudoinstrucciones que facilitan la programación. El ensamblador las traduce automáticamente a instrucciones reales \cite{mipsguide}:
+
+\begin{longtable}{|l|l|l|}
+    \hline
+    \textbf{Pseudoinstrucción} & \textbf{Equivalencia} & \textbf{Descripción} \\
+    \hline
+    li Rd, Imm & addiu Rd, \$zero, Imm & Load Immediate \\
+    \hline
+    la Rd, Label & addiu Rd, \$zero, direccion & Load Address \\
+    \hline
+    move Rd, Rs & addiu Rd, Rs, 0 & Copia registro \\
+    \hline
+    nop & sll \$zero, \$zero, 0 & No operation \\
+    \hline
+    b Label & beq \$zero, \$zero, Label & Salto incondicional \\
+    \hline
+    blt Rs, Rt, Label & slt at, Rs, Rt; bne at, \$zero, Label & Branch if less than \\
+    \hline
+    neg Rd, Rs & sub Rd, \$zero, Rs & Negación \\
+    \hline
+    \caption{Pseudoinstrucciones comunes}
+\end{longtable}
+
+\section{Modos de Direccionamiento}
+
+MIPS32 soporta varios modos de direccionamiento \cite{mipsguide}:
+
+\begin{itemize}
+    \item \textbf{Direccionamiento por registro}: El operando está en un registro (ej. \texttt{add \$t0, \$t1, \$t2})
+    \item \textbf{Direccionamiento inmediato}: El operando es una constante (ej. \texttt{addi \$t0, \$t1, 10})
+    \item \textbf{Direccionamiento base+desplazamiento}: Acceso a memoria usando registro base y offset (ej. \texttt{lw \$t0, 8(\$s1)})
+    \item \textbf{Direccionamiento relativo a PC}: Usado por instrucciones de salto condicional (\texttt{beq}, \texttt{bne})
+    \item \textbf{Direccionamiento pseudo directo}: Usado por \texttt{j} y \texttt{jal}
+\end{itemize}
+
+\section{Ejemplos Prácticos}
+
+\subsection{Suma de dos números ingresados por el usuario}
+
+\begin{lstlisting}[caption=Programa para sumar dos números, label=lst:ejemplo1]
+.data
+    prompt1: .asciiz "Ingrese el primer numero: "
+    prompt2: .asciiz "Ingrese el segundo numero: "
+    result:  .asciiz "La suma es: "
+
+.text
+    .globl main
+main:
+    # Solicitar primer numero
+    li $v0, 4
+    la $a0, prompt1
+    syscall
+    
+    li $v0, 5
+    syscall
+    move $t0, $v0
+    
+    # Solicitar segundo numero
+    li $v0, 4
+    la $a0, prompt2
+    syscall
+    
+    li $v0, 5
+    syscall
+    move $t1, $v0
+    
+    # Sumar
+    add $t2, $t0, $t1
+    
+    # Mostrar resultado
+    li $v0, 4
+    la $a0, result
+    syscall
+    
+    li $v0, 1
+    move $a0, $t2
+    syscall
+    
+    # Salir
+    li $v0, 10
+    syscall
+\end{lstlisting}
+
+\subsection{Bucle for para sumar números del 1 al N}
+
+\begin{lstlisting}[caption=Suma de 1 a N, label=lst:ejemplo2]
+.data
+    prompt: .asciiz "Ingrese N: "
+    result: .asciiz "La suma de 1 a N es: "
+
+.text
+    .globl main
+main:
+    li $v0, 4
+    la $a0, prompt
+    syscall
+    
+    li $v0, 5
+    syscall
+    move $t0, $v0          # $t0 = N
+    
+    li $t1, 0              # suma = 0
+    li $t2, 1              # contador = 1
+    
+bucle:
+    bgt $t2, $t0, fin      # if contador > N: salir
+    add $t1, $t1, $t2      # suma += contador
+    addi $t2, $t2, 1       # contador++
+    j bucle
+    
+fin:
+    li $v0, 4
+    la $a0, result
+    syscall
+    
+    li $v0, 1
+    move $a0, $t1
+    syscall
+    
+    li $v0, 10
+    syscall
+\end{lstlisting}
+
+\section{Referencias}
+
+\begin{thebibliography}{9}
+    \bibitem{hennessy2012computer}
+        Patterson, D. A., \& Hennessy, J. L. (2012). \textit{Computer Organization and Design: The Hardware/Software Interface}. 4th ed. Morgan Kaufmann.
+    
+    \bibitem{mipsguide}
+        UNSW Sydney. (2024). \textit{MIPS Instruction Set Guide}. COMP1521 Course Materials.
+    
+    \bibitem{spimref}
+        SPIM Documentation. \textit{MIPS Registers and Usage Convention}. Wheaton College.
+    
+    \bibitem{regusage}
+        MIPS Technologies. (2011). \textit{MIPS32 74Kc Programming Manual}.
+\end{thebibliography}
+
+\end{document}

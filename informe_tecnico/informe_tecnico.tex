@@ -1,0 +1,375 @@
+\documentclass[12pt, letterpaper]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[spanish]{babel}
+\usepackage{geometry}
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{longtable}
+\usepackage{caption}
+\usepackage{hyperref}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{listings}
+\usepackage{xcolor}
+
+% Configuración de márgenes
+\geometry{top=2.5cm, bottom=2.5cm, left=3cm, right=3cm}
+
+% Configuración de títulos
+\usepackage{titlesec}
+\titleformat{\section}
+  {\normalfont\Large\bfseries}{\thesection}{1em}{}
+\titleformat{\subsection}
+  {\normalfont\large\bfseries}{\thesubsection}{1em}{}
+
+% Hipervínculos
+\hypersetup{
+    colorlinks=true,
+    linkcolor=blue,
+    citecolor=blue,
+    urlcolor=blue,
+}
+
+% Comando para nombre del autor (evita problemas con corchetes)
+\newcommand{\authorname}{Jesús Alberto Mora Lozada}
+\newcommand{\institucion}{Universidad de Carabobo}
+
+% Inicio del documento
+\begin{document}
+
+% ----------------------------------------------------------------
+% CARÁTULA
+% ----------------------------------------------------------------
+\begin{titlepage}
+    \centering
+    \vspace*{1cm}
+    
+    \Huge
+    \textbf{Informe Técnico}
+    
+    \vspace{0.5cm}
+    \Large
+    \textbf{Diseño y Presupuesto de un Servidor para Análisis de Tráfico y Pentesting}
+    
+    \vspace{1.5cm}
+    \normalsize
+    \textbf{Presentado por:} \\
+    \vspace{0.3cm}
+    \authorname
+    
+    \vspace{0.8cm}
+    \textbf{Fecha:} \\
+    \vspace{0.3cm}
+    22 de Mayo de 2026
+    
+    \vspace{1.5cm}
+    \textbf{Palabras clave:} Servidor Xeon, Pentesting, Virtualización, Análisis de tráfico, Presupuesto técnico
+    
+    \vfill
+    \rule{0.8\textwidth}{0.4pt}
+    \vspace{0.3cm}
+    \small
+    \textbf{Nota académica:} Este informe ha sido elaborado con fines educativos y de planificación técnica. Los precios corresponden al mercado de componentes reacondicionados de grado empresarial (fecha aproximada: 2025).
+    
+\end{titlepage}
+
+% ----------------------------------------------------------------
+% TABLA DE CONTENIDO
+% ----------------------------------------------------------------
+\tableofcontents
+\newpage
+
+% ----------------------------------------------------------------
+% INTRODUCCIÓN
+% ----------------------------------------------------------------
+\section{Introducción y Objetivo}
+
+El presente informe técnico tiene como objetivo describir el diseño y la justificación de un servidor especializado para dos tareas fundamentales en ciberseguridad ofensiva y defensiva:
+
+\begin{enumerate}
+    \item \textbf{Análisis de tráfico de red en tiempo real:} Captura, inspección y reproducción de paquetes para detección de intrusiones, análisis forense y generación de métricas.
+    \item \textbf{Pentesting (pruebas de penetración):} Ejecución de máquinas virtuales (VMs) con herramientas como Kali Linux, Metasploit, Hashcat y entornos Active Directory.
+\end{enumerate}
+
+El servidor debe soportar múltiples máquinas virtuales de forma concurrente, priorizando la estabilidad, la baja latencia de memoria, el alto número de hilos de ejecución, la velocidad de escritura y la ausencia de cuellos de botella. El presupuesto máximo asignado es de \textbf{3000 USD}.
+
+El diseño se basa en la arquitectura \textbf{Intel Xeon Scalable (Género 2)} utilizando componentes reacondicionados de grado empresarial, que ofrecen la mejor relación rendimiento/precio para este rango.
+
+\section{Parámetros técnicos de diseño}
+
+A continuación se analizan los ocho parámetros solicitados, justificando cada elección de componente.
+
+\subsection{Placa madre con estabilidad amplia}
+
+\begin{itemize}
+    \item \textbf{Componente seleccionado:} Dell PowerEdge R740 (placa base propietaria Dell, formato 2U).
+    \item \textbf{Características clave:}
+        \begin{itemize}
+            \item Capacitadores de estado sólido de grado industrial.
+            \item Trazados de señal optimizados para reducir diafonía (crosstalk) entre líneas de alta velocidad.
+            \item Sistemas de monitoreo de voltaje por componente (sensores integrados en VRM).
+            \item Certificación MIL-STD-810G para vibración y choque.
+            \item Soporte ECC (Error Correcting Code) en el bus de memoria.
+        \end{itemize}
+    \item \textbf{Estabilidad:} Diseñada para ciclo de trabajo 24/7/365 con temperatura ambiente de hasta 35°C.
+    \item \textbf{Presupuesto asignado:} 950 USD (incluye chasis, backplane, fuentes redundantes y placa).
+\end{itemize}
+
+\subsection{Latencia de la memoria y velocidad}
+
+\begin{itemize}
+    \item \textbf{Configuración:} 128 GB DDR4 ECC Registered (RDIMM) en disposición \textbf{8 x 16 GB}.
+    \item \textbf{Velocidad efectiva:} 2933 MHz (compatible con los Xeon Gold 6130).
+    \item \textbf{Latencia CAS típica:} CL17 – CL19.
+    \item \textbf{Optimización de canales:}
+        \begin{itemize}
+            \item Cada CPU Xeon Gold 6130 dispone de \textbf{6 canales de memoria}.
+            \item Con 8 módulos por socket (16 totales) se llenan todos los canales, maximizando el ancho de banda y minimizando la latencia de acceso.
+        \end{itemize}
+    \item \textbf{Impacto en pentesting:} Menor latencia = mejor rendimiento en ataques de diccionario (hashcat) y captura de paquetes con timestamps precisos (Wireshark en modo monitor).
+    \item \textbf{Presupuesto asignado:} 350 USD.
+\end{itemize}
+
+\subsection{Priorización de hilos y núcleos}
+
+\begin{itemize}
+    \item \textbf{Procesadores:} 2 x Intel Xeon Gold 6130.
+    \item \textbf{Arquitectura:}
+        \[
+        \text{16 núcleos} \times 2 = 32 \text{ núcleos físicos}
+        \]
+        \[
+        \text{32 hilos lógicos} \times 2 = 64 \text{ hilos totales}
+        \]
+    \item \textbf{Frecuencia:} Base 2.1 GHz / Turbo máx. 3.7 GHz.
+    \item \textbf{Caché:} 22 MB de caché L3 por CPU.
+    \item \textbf{Tecnologías de priorización:}
+        \begin{itemize}
+            \item Hyper-Threading (2 hilos por núcleo).
+            \item Intel VT-x con Extended Page Tables (EPT) para virtualización eficiente.
+            \item Intel Cache Allocation Technology (CAT) – permite reservar porciones de caché L3 para VMs críticas.
+        \end{itemize}
+    \item \textbf{Asignación recomendada en hipervisor:} Fijar núcleos dedicados a VMs de análisis de tráfico (Zeek, Snort) y pentesting (Kali con ataques de fuerza bruta).
+    \item \textbf{Presupuesto asignado:} 400 USD (ambos CPUs, mercado refurbished).
+\end{itemize}
+
+\subsection{Velocidad de escritura (Storage I/O)}
+
+\begin{table}[!ht]
+    \centering
+    \caption{Sistema de almacenamiento jerarquizado}
+    \label{tab:storage}
+    \begin{tabular}{p{4cm}p{6cm}p{3cm}}
+        \toprule
+        \textbf{Nivel} & \textbf{Configuración} & \textbf{Velocidad estimada} \\
+        \midrule
+        SO y metadatos & RAID 1: 2 x SSD SATA Enterprise 480 GB & Lectura: 550 MB/s \\
+        VMs activas & RAID 10: 4 x SSD SATA Enterprise 960 GB & Escritura secuencial: $>$2000 MB/s \\
+        Almacenamiento frío/logs & RAID 1: 2 x HDD SAS 2.4 TB 10k RPM & IOPS: $\sim$300k aleatorios \\
+        \bottomrule
+    \end{tabular}
+\end{table}
+
+\begin{itemize}
+    \item \textbf{Controladora RAID:} Dell PERC H740P (caché de 8 GB con protección por batería, escritura diferida segura).
+    \item \textbf{Relevancia en pentesting:}
+        \begin{itemize}
+            \item Capturas pcap masivas (archivos de varios GB) requieren escritura sostenida sin bloqueos.
+            \item Reproducción de tráfico con \texttt{tcpreplay} demanda baja latencia de I/O.
+            \item Análisis forense sobre imágenes de disco (VMs) requiere acceso aleatorio rápido.
+        \end{itemize}
+    \item \textbf{Presupuesto asignado:} 650 USD.
+\end{itemize}
+
+\subsection{Fuente de poder – soporte eléctrico}
+
+\begin{itemize}
+    \item \textbf{Configuración:} 2 fuentes de 750W Platinum (redundantes, hot-swap).
+    \item \textbf{Certificación:} 80 PLUS Platinum (eficiencia $>$92\% al 50\% de carga).
+    \item \textbf{Protecciones incluidas:}
+        \begin{itemize}
+            \item OVP (Over Voltage Protection)
+            \item OCP (Over Current Protection)
+            \item SCP (Short Circuit Protection)
+            \item OTP (Over Temperature Protection)
+        \end{itemize}
+    \item \textbf{Consumo estimado del sistema:}
+        \begin{itemize}
+            \item Reposo: $\sim$150W
+            \item Carga media (10 VMs ligeras): $\sim$350W – 450W
+            \item Pico máximo (todas las VMs a máxima CPU): $\sim$600W
+        \end{itemize}
+    \item \textbf{Redundancia:} Si falla una fuente, la segunda asume la carga completa sin interrupción – crítico para laboratorios de pentesting de larga duración (24h+).
+    \item \textbf{Presupuesto:} Incluido en el chasis (950 USD total).
+\end{itemize}
+
+\subsection{Evitar cuello de botella entre componentes}
+
+\begin{table}[!ht]
+    \centering
+    \caption{Análisis de cuellos de botella potenciales}
+    \label{tab:bottleneck}
+    \begin{tabular}{p{4.5cm}p{4cm}p{4cm}p{2.5cm}}
+        \toprule
+        \textbf{Ruta de datos} & \textbf{Ancho de banda teórico} & \textbf{Demanda real estimada} & \textbf{¿Cuello?} \\
+        \midrule
+        CPU a RAM & 6 canales @ 2933 MHz = $\sim$140 GB/s por CPU & $\sim$50 GB/s (máx) & No \\
+        CPU 1 a CPU 2 & 2 enlaces UPI @ 10.4 GT/s & Variable según afinidad & Condicional* \\
+        RAID a PCIe & PCIe 3.0 x8 = 7.88 GB/s & $<$ 2 GB/s (SSD SATA) & No \\
+        NIC a RAM & 40 Gbps = 5 GB/s & $<$ 4 GB/s & No \\
+        GPU a CPU & PCIe 3.0 x16 = 64 GB/s & $\sim$2 GB/s (T400) & No \\
+        \bottomrule
+    \end{tabular}
+    \caption*{*Condicional: Asignar VMs a núcleos del mismo socket para evitar tráfico entre CPUs.}
+\end{table}
+
+\begin{itemize}
+    \item \textbf{Recomendaciones para evitar cuello:}
+        \begin{enumerate}
+            \item Usar \textbf{affinity} (fijación de núcleos) en el hipervisor: cada VM pesada debe asignarse a un solo socket.
+            \item Evitar mezclar tráfico de red intensivo (10GbE) con acceso masivo a disco en el mismo núcleo.
+            \item La GPU (NVIDIA T400) al ser de perfil bajo (x8) no satura el bus x16.
+        \end{enumerate}
+    \item \textbf{Conclusión:} El único cuello potencial sería el acceso a SSD SATA en lugar de NVMe, pero se mantiene dentro del presupuesto.
+\end{itemize}
+
+\subsection{El chip de la placa (Chipset)}
+
+\begin{itemize}
+    \item \textbf{Chipset:} Intel C622 (nombre en código Lewisburg).
+    \item \textbf{Características técnicas destacadas:}
+        \begin{itemize}
+            \item \textbf{Líneas PCIe adicionales:} 24 líneas PCIe 3.0 (para dispositivos de gestión como iDRAC, USB, SATA).
+            \item \textbf{Intel VMD:} Volume Management Device – permite hot-swap de unidades NVMe sin reiniciar.
+            \item \textbf{Intel SGX:} Software Guard Extensions – permite crear enclaves seguros para aislar VMs de análisis malicioso.
+            \item \textbf{Gestión avanzada de energía:} Soportes C-states profundos y P-states dinámicos.
+        \end{itemize}
+    \item \textbf{Impacto práctico:}
+        \begin{itemize}
+            \item Permite pasar GPUs o NICs a VMs mediante VT-d (Direct I/O) sin intervención del chipset, reduciendo latencia.
+            \item El iDRAC (Dell Remote Access Controller) integrado permite gestión fuera de banda, crítica para laboratorios remotos.
+        \end{itemize}
+    \item \textbf{Limitación:} No soporta PCIe 4.0 (disponible en Xeon Scalable 3ra generación, fuera de presupuesto).
+\end{itemize}
+
+\subsection{El socket del procesador}
+
+\begin{itemize}
+    \item \textbf{Socket:} LGA 3647 (específicamente P0 para Xeon Gold 6130).
+    \item \textbf{Características físicas:}
+        \begin{itemize}
+            \item \textbf{Número de contactos:} 3647 pines (mayor densidad que LGA 2066).
+            \item \textbf{Soporte TDP:} Hasta 205W por CPU (los Gold 6130 son de 125W, amplio margen).
+            \item \textbf{Topología:} Dos zócalos por placa base con interconexión mediante bus en malla (mesh).
+        \end{itemize}
+    \item \textbf{Ventajas técnicas:}
+        \begin{enumerate}
+            \item Permite actualización futura a Xeon Platinum (más núcleos y caché).
+            \item Mayor distancia entre contactos que sockets de escritorio $\rightarrow$ menor riesgo de corrosión o puentes accidentales.
+            \item Compatibilidad con memoria Intel Optane Persistent Memory (aunque no se utilice ahora).
+        \end{enumerate}
+    \item \textbf{Presupuesto:} Incluido en la placa base.
+\end{itemize}
+
+\section{Componente adicional: Tarjeta de red y GPU}
+
+Para cumplir con los requisitos de análisis de tráfico y visualización, se incluyen dos componentes adicionales:
+
+\subsection{Tarjeta de red de alta velocidad}
+
+\begin{itemize}
+    \item \textbf{Modelo:} Intel X710-DA4.
+    \item \textbf{Especificaciones:} 4 puertos SFP+ a 10 GbE cada uno (40 Gbps agregados).
+    \item \textbf{Tecnologías clave:}
+        \begin{itemize}
+            \item SR-IOV (Single Root I/O Virtualization): permite pasar puertos virtuales directamente a VMs.
+            \item Soporte para VXLAN, NVGRE y checksum offloading.
+        \end{itemize}
+    \item \textbf{Presupuesto:} 300 USD (refurbished).
+\end{itemize}
+
+\subsection{Tarjeta gráfica básica (salida de video)}
+
+\begin{itemize}
+    \item \textbf{Modelo:} NVIDIA Quadro P400 (refurbished).
+    \item \textbf{Razón de inclusión:} Los Xeon Gold no tienen gráficos integrados; se necesita una GPU mínima para la instalación del SO.
+    \item \textbf{Especificaciones:} 256 núcleos CUDA, 2 GB GDDR5, consumo $<$30W, perfil de media altura.
+    \item \textbf{Nota:} No acelera significativamente hashcat (aunque es compatible con CUDA), su función principal es la salida de video.
+    \item \textbf{Presupuesto:} 50 USD.
+\end{itemize}
+
+\section{Resumen de presupuesto final}
+
+\begin{table}[!ht]
+    \centering
+    \caption{Presupuesto detallado del servidor completo}
+    \label{tab:budget}
+    \begin{tabular}{p{5cm}p{6cm}r}
+        \toprule
+        \textbf{Componente / Concepto} & \textbf{Detalle} & \textbf{Costo (USD)} \\
+        \midrule
+        Servidor base & Dell PowerEdge R740 (chasis + placa + 2 fuentes 750W Platinum + iDRAC) & 950 \\
+        Procesadores & 2 x Intel Xeon Gold 6130 (refurbished) & 400 \\
+        Memoria RAM & 128 GB DDR4 ECC RDIMM (8x16 GB, 2933 MHz) & 350 \\
+        Almacenamiento & 2 SSD 480 GB + 4 SSD 960 GB + 2 HDD 2.4 TB + controladora PERC H740P & 650 \\
+        Tarjeta de red & Intel X710-DA4 (4 puertos 10GbE SFP+) & 300 \\
+        GPU básica & NVIDIA Quadro P400 (refurbished) & 50 \\
+        \midrule
+        \textbf{Subtotal} & & \textbf{2.700} \\
+        Margen de contingencia & Cables SFF-8643, pasta térmica, adaptadores & 300 \\
+        \midrule
+        \textbf{Total máximo} & & \textbf{3.000} \\
+        \bottomrule
+    \end{tabular}
+\end{table}
+
+\section{Consideraciones finales y limitaciones}
+
+\subsection{Ventajas del diseño propuesto}
+\begin{itemize}
+    \item Excelente relación núcleos/precio (32 núcleos físicos por 3000 USD).
+    \item Memoria ECC con latencia controlada, crítica para virtualización y análisis de tráfico.
+    \item Redundancia de fuentes y RAID10 para tolerancia a fallos.
+    \item Posibilidad de pasar dispositivos PCIe (NIC, GPU) directamente a VMs mediante SR-IOV/VT-d.
+\end{itemize}
+
+\subsection{Limitaciones importantes}
+\begin{itemize}
+    \item \textbf{Ruido:} Los ventiladores del R740 emiten $\sim$40 dB en reposo y hasta $\sim$70 dB en carga. No es apto para un entorno de oficina silencioso o doméstico.
+    \item \textbf{PCIe 3.0:} El chipset C622 no soporta PCIe 4.0 (la velocidad máxima es 8 GT/s frente a los 16 GT/s de las generaciones más recientes).
+    \item \textbf{Consumo eléctrico:} Aunque eficiente (Platinum), su factura eléctrica será notable si funciona 24/7.
+    \item \textbf{Portabilidad:} Peso superior a 25 kg, no es transportable sin ayuda.
+\end{itemize}
+
+\subsection{Recomendación académica final}
+
+El diseño presentado demuestra un equilibrio óptimo entre los ocho parámetros técnicos solicitados (estabilidad, latencia de memoria, priorización de hilos, velocidad de escritura, soporte eléctrico, ausencia de cuellos de botella, chipset y socket) respetando estrictamente el presupuesto de 3000 USD mediante el uso inteligente de componentes reacondicionados de grado empresarial.
+
+Se recomienda su implementación en un laboratorio universitario o entorno de investigación con infraestructura de refrigeración y aislamiento acústico adecuados.
+
+\vspace{1cm}
+
+\begin{flushright}
+\textit{Firmado:} \\
+\authorname \\
+\institucion \\
+22 de Mayo de 2026
+\end{flushright}
+
+\newpage
+\section*{Referencias técnicas}
+
+\begin{thebibliography}{99}
+    \bibitem{intel_xeon} Intel Corporation. (2017). \textit{Intel Xeon Scalable Processor Family Datasheet, Volume 1}. Document Number: 336212-003US.
+    
+    \bibitem{dell_r740} Dell EMC. (2018). \textit{Dell EMC PowerEdge R740 Technical Guide}. Dell Doc. No. 4.5.
+    
+    \bibitem{perf_analysis} Molka, D., et al. (2015). ``Memory performance and cache coherency effects on Intel Xeon systems''. \textit{Proceedings of the 2015 International Conference on Parallel Processing}.
+    
+    \bibitem{proxmox_passthrough} Proxmox Server Solutions. (2024). \textit{PCI(e) Passthrough - Proxmox VE Documentation}. Recuperado de \url{https://pve.proxmox.com/wiki/PCI(e)_Passthrough}
+    
+    \bibitem{spec_memory} JEDEC Solid State Technology Association. (2018). \textit{DDR4 SDRAM Standard JESD79-4B}.
+\end{thebibliography}
+
+\end{document}
